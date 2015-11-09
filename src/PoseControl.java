@@ -19,7 +19,8 @@ public class PoseControl {
 	float gyro;
 	float circle = 0;
 	DifferentialPilot dp;
-	SensorControl cc;
+	SensorControl ccfront;
+	SensorControl ccball;
 
 	public PoseControl(RegulatedMotor l, RegulatedMotor r, RegulatedMotor m, GyroControl g) {
 		this.l = l;
@@ -33,12 +34,16 @@ public class PoseControl {
 		ltacho = l.getTachoCount();
 		rtacho = r.getTachoCount();
 		
-		cc = new ColorControl(SensorPort.S1);
+		ccfront = new ColorControl(SensorPort.S3);
+		ccball = new RedControl(SensorPort.S1);
 
 		gyro = getGyro();
 		dp = new DifferentialPilot(5.6f, 13.75f, l, r);
-		this.followCircleUntil(270,1);
-		this.emptyBucket();
+		int i = 0;
+		while (i++<500)
+			this.followCircleUntil(270+i*270,1.5);
+		
+		// this.emptyBucket();
 	}
 
 	public float getGyro() {
@@ -87,7 +92,23 @@ public class PoseControl {
 	}
 	
 	public void emptyBucket() {
+		m.setSpeed(maxspeed/10);
+		m.rotateTo(-110);
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		m.rotateTo(0);
+	}
+	
+	public void goToA() {
+		dp.rotate(90);
 		
+		
+		
+		// if colorID === 13 then emptybucket, rotate 180 degre
 	}
 	
 	public void followCircleUntil(float toAngle, int r) {
@@ -100,12 +121,12 @@ public class PoseControl {
 		
 		while ((j = Math.abs(normAngle(toAngle - getGyro()))) > 5) {
 			float sample = u.getSample(0);
-			System.out.println(j);
-			if (sample < 0.4 && !goingLeft) {
-				dp.arcForward(-235);
+			System.out.println(sample);
+			if (sample < 0.9*(float)r/10 && !goingLeft) {
+				dp.arcForward(-55*r);
 				goingLeft=true;
-			} else if (!(sample < 0.4) && goingLeft) {
-				dp.arcForward(-55);
+			} else if (!(sample < 0.9*(float)r/10) && goingLeft) {
+				dp.arcForward(55*r);
 				goingLeft=false;
 			}
 		}
